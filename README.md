@@ -2,6 +2,8 @@
 
 An adaptive, browser-based study site for the Operating Systems midterm topics used in the AITU course.
 
+**Live site:** <https://klamsii.github.io/os-midterm-trainer/>
+
 ## What is included
 
 - 20 independently selectable exam variants
