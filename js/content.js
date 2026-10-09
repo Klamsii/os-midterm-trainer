@@ -289,6 +289,187 @@ const CONCEPTS = [
   }
 ];
 
+// Five genuinely different exam formulations per skill. Variants rotate through
+// these formulations and use different data, while the skill identifier remains
+// stable so analytics can still detect a repeated weakness.
+const PROMPT_VARIANTS = {
+  "shell-script": [
+    c => `On ${c.host}, a student saves several Linux commands in ${c.file}. What best describes this file when Bash can execute those commands in sequence?`,
+    c => `An administrator wants the commands used on ${c.host} to be repeatable and stores them as plain text in ${c.file}. What kind of file is being created?`,
+    c => `${c.file} contains echo, test, and for commands and is read by Bash from top to bottom. Which term identifies ${c.file}?`,
+    c => `A teammate says ${c.file} must be compiled before Bash can use it. Which classification shows why that statement is wrong?`,
+    c => `Which description fits ${c.file} if it automates a routine on ${c.host} by combining shell commands in one text file?`
+  ],
+  shebang: [
+    c => `${c.file} begins with #!/bin/bash. What does this first line tell Linux when the script is launched directly?`,
+    c => `Linux launches ./${c.file} directly. Which purpose is served by the #!/bin/bash line at the top?`,
+    c => `A script on ${c.host} must always be interpreted by Bash rather than another shell. Which effect does #!/bin/bash provide?`,
+    c => `The first two characters of ${c.file} are #!. What information is supplied by the complete line #!/bin/bash?`,
+    c => `Why can the operating system select Bash for ${c.file} when the file starts with #!/bin/bash?`
+  ],
+  "chmod-x": [
+    c => `Which effect does chmod +x ${c.file} have before the student runs ./${c.file}?`,
+    c => `${c.file} gives “Permission denied” when launched directly. What change is made by chmod +x ${c.file}?`,
+    c => `After editing ${c.file}, a student runs chmod +x on it. Which file permission has been added?`,
+    c => `What does the +x portion specifically request in chmod +x ${c.file}?`,
+    c => `On ${c.host}, which statement correctly describes the result of chmod +x ${c.file}?`
+  ],
+  "positional-one": [
+    c => `The command ./${c.file} ${c.arg} is executed. What value does $1 contain inside the script?`,
+    c => `${c.file} reads INPUT=$1 after being called as ./${c.file} ${c.arg}. What is assigned to INPUT?`,
+    c => `Inside ${c.file}, echo "$1" runs after the command ./${c.file} ${c.arg}. What is printed?`,
+    c => `A Bash script receives ${c.arg} immediately after its filename on the command line. Which value is represented by $1?`,
+    c => `When ./${c.file} ${c.arg} starts on ${c.host}, which command-line item becomes the first positional parameter?`
+  ],
+  "argument-count": [
+    c => `A script on ${c.host} must print how many command-line arguments it received. Which Bash special parameter should it echo?`,
+    c => `${c.file} needs to reject calls with the wrong number of arguments. Which special parameter supplies that count?`,
+    c => `Which Bash parameter would ${c.file} compare with 2 to require exactly two arguments?`,
+    c => `A diagnostic line must display the positional-argument count for ${c.file}. What should appear after echo?`,
+    c => `Which special parameter changes when more arguments are added after ./${c.file} on ${c.host}?`
+  ],
+  "exit-status": [
+    c => `After ${c.file} runs a command successfully, which conventional exit status should that command return?`,
+    c => `${c.file} finishes without an error on ${c.host}. Which value should echo $? normally show immediately afterward?`,
+    c => `A command used by ${c.file} reports success to Bash. Which numeric status represents that result?`,
+    c => `Which exit code lets a following && command run after ${c.file} completes successfully?`,
+    c => `The operating system records a successful completion for ${c.file}. What conventional status value is stored?`
+  ],
+  "if-zero": [
+    c => `In ${c.file}, when will the commands after then run in an if statement?`,
+    c => `${c.file} contains if command; then echo OK; fi. Which result from command causes OK to print?`,
+    c => `Bash evaluates a program directly as the condition of an if block on ${c.host}. Which exit status is treated as true?`,
+    c => `A test inside ${c.file} succeeds. What must its status be for the then branch to execute?`,
+    c => `Which rule explains when Bash enters the then section of an if statement in ${c.file}?`
+  ],
+  "directory-test": [
+    c => `Which Bash expression correctly tests whether ${c.dir} exists and is a directory?`,
+    c => `${c.file} should continue only when ${c.dir} is a directory. Which test belongs in its if condition?`,
+    c => `An administrator must distinguish the directory ${c.dir} from a regular file. Which unary test operator is correct?`,
+    c => `Complete this check in ${c.file}: if [ ___ ${c.dir} ]; then echo directory; fi. Which flag fills the blank?`,
+    c => `Which condition returns success specifically when the path ${c.dir} has directory type?`
+  ],
+  "variable-expansion": [
+    c => `What is printed by ANIMAL="${c.animal}" followed by echo "My favorite animal is $ANIMAL"?`,
+    c => `${c.file} sets ANIMAL=${c.animal} and later runs printf '%s' "$ANIMAL". Which text is passed to printf?`,
+    c => `In a double-quoted Bash string on ${c.host}, $ANIMAL refers to a variable containing ${c.animal}. What replaces $ANIMAL?`,
+    c => `A line reads ANIMAL="${c.animal}". Which output demonstrates variable expansion rather than literal printing?`,
+    c => `Why does echo "$ANIMAL" in ${c.file} display ${c.animal} instead of the characters $ANIMAL?`
+  ],
+  "loop-count": [
+    c => `How many values are printed by for ((i=0; i<${c.n}; i++)); do echo $i; done?`,
+    c => `A loop in ${c.file} starts at i=0, increments once, and stops before i reaches ${c.n}. How many iterations complete?`,
+    c => `What is the output count of seq 0 $(( ${c.n} - 1 )) when it represents the same range as i<${c.n}?`,
+    c => `The last value printed by a zero-based loop is ${c.n - 1}. If no value is skipped, how many values were printed?`,
+    c => `For ((i=0; i!=${c.n}; i++)), how many times does the body run before the condition becomes false?`
+  ],
+  "vi-insert": [
+    c => `While editing ${c.file} in vi, which key switches from normal mode to insert mode?`,
+    c => `vi opens ${c.file} in normal mode. Which single key lets the student begin typing before the cursor?`,
+    c => `A student can move the cursor in vi but typed letters act as commands. Which key should enter text-entry mode?`,
+    c => `Which vi command changes the editor from normal mode so new text can be inserted into ${c.file}?`,
+    c => `Before adding a line to ${c.file} in vi, which key should be pressed to enter insert mode?`
+  ],
+  "dev-directory": [
+    c => `An administrator on ${c.host} wants to inspect Linux device nodes. Which directory should be checked first?`,
+    c => `Where does Linux normally expose special files representing disks, terminals, and other devices on ${c.host}?`,
+    c => `${c.file} needs the path of a block-device node. Under which top-level directory should it look?`,
+    c => `A technician sees entries such as sda, null, and tty. Which directory is being listed?`,
+    c => `Which standard directory connects user-space paths with device interfaces on ${c.host}?`
+  ],
+  "arch-command": [
+    c => `Which command gives a short machine architecture name such as x86_64 on ${c.host}?`,
+    c => `A script needs only the architecture identifier, not detailed CPU topology. Which command is the shortest match?`,
+    c => `Which command can print x86_64 as a concise answer on ${c.host}?`,
+    c => `${c.file} must record the hardware architecture in one short value. Which utility should it call?`,
+    c => `An administrator wants a brief machine-architecture name before choosing a binary. Which command provides it?`
+  ],
+  lscpu: [
+    c => `A technician needs CPU family, model, cores, threads, and architecture details from ${c.host}. Which command is most suitable?`,
+    c => `Which Linux utility summarizes processor topology and data collected from sysfs and /proc/cpuinfo on ${c.host}?`,
+    c => `A report requires sockets, cores per socket, threads, and CPU model. Which command should ${c.file} run?`,
+    c => `Which command provides substantially more CPU detail than arch on ${c.host}?`,
+    c => `To inspect virtualization flags and the processor family on ${c.host}, which utility is appropriate?`
+  ],
+  "free-m": [
+    c => `Which command displays RAM and swap usage in megabyte units on ${c.host}?`,
+    c => `${c.file} must report total, used, and available memory using megabyte-scale units. Which command should it execute?`,
+    c => `An administrator wants one table containing both physical memory and swap values. Which option is correct?`,
+    c => `Which command combines the free utility with a unit flag suitable for an MB-style exam answer?`,
+    c => `To compare RAM and swap consumption on ${c.host} without CPU or disk details, which command is used?`
+  ],
+  lsusb: [
+    c => `A USB storage device is connected to ${c.host}. Which command lists devices detected on USB buses?`,
+    c => `A newly attached USB keyboard must be identified from the command line. Which utility should be run?`,
+    c => `${c.file} needs vendor and product entries from the USB subsystem. Which command supplies them?`,
+    c => `Which listing command is specific to Universal Serial Bus devices on ${c.host}?`,
+    c => `A technician should verify that Linux detects a flash drive on a USB bus. Which command is the direct choice?`
+  ],
+  lspci: [
+    c => `Which command lists devices attached through the PCI bus on ${c.host}?`,
+    c => `A network controller installed on a PCIe slot must be identified. Which command lists it?`,
+    c => `${c.file} should inventory graphics and Ethernet controllers on the PCI bus. Which utility fits?`,
+    c => `Which command reports PCI device addresses, classes, and vendors on ${c.host}?`,
+    c => `To distinguish internal PCI controllers from USB peripherals, which listing command is used?`
+  ],
+  "lspci-k": [
+    c => `What extra information is requested by running lspci -k instead of plain lspci on ${c.host}?`,
+    c => `A PCI device is visible, but the technician also needs the kernel driver in use. Which information does -k add?`,
+    c => `Why would ${c.file} execute lspci -k while diagnosing a network adapter?`,
+    c => `Compared with lspci alone, which driver-related details appear in lspci -k output?`,
+    c => `Which result makes lspci -k useful when matching a PCI controller to Linux support?`
+  ],
+  lsmod: [
+    c => `Before changing drivers on ${c.host}, which statement describes the output of lsmod?`,
+    c => `A technician wants a snapshot of modules already present in the running kernel. Which description matches lsmod?`,
+    c => `${c.file} executes lsmod and reads columns for Module, Size, and Used by. What is being listed?`,
+    c => `Which information is formatted from /proc/modules by the lsmod utility?`,
+    c => `When lsmod shows ${c.module}, what does that tell the administrator about the current kernel?`
+  ],
+  modprobe: [
+    c => `Which command should load the ${c.module} kernel module and automatically handle its declared dependencies?`,
+    c => `${c.module} is not currently loaded on ${c.host}. Which utility should add it together with required modules?`,
+    c => `An administrator prefers dependency-aware module loading over inserting a single object directly. Which command is correct?`,
+    c => `Which command consults the module dependency database before loading ${c.module}?`,
+    c => `${c.file} needs to request kernel support provided by ${c.module}. Which command performs the load?`
+  ],
+  "fdisk-list": [
+    c => `What is the non-interactive purpose of sudo fdisk -l on ${c.host}?`,
+    c => `Before editing any disk, a technician runs fdisk -l. Which information is requested?`,
+    c => `${c.file} needs an overview of recognized disks and their partition tables. Which fdisk mode supplies it?`,
+    c => `What does the lowercase -l option tell fdisk to do without opening an editing session?`,
+    c => `Which result should an administrator expect from fdisk -l on ${c.host}?`
+  ],
+  "sd-partition": [
+    c => `In the device path /dev/${c.disk}, what does the trailing number identify?`,
+    c => `Linux reports /dev/${c.disk}. How should the final digit in this block-device name be interpreted?`,
+    c => `Which storage object is selected by the numbered path /dev/${c.disk}, rather than by its unnumbered disk name?`,
+    c => `A mount command refers to /dev/${c.disk}. What role does ${c.disk.slice(-1)} play in that name?`,
+    c => `When the disk is named /dev/${c.disk.replace(/[0-9]+$/, "")}, what does /dev/${c.disk} identify?`
+  ],
+  unmount: [
+    c => `A filesystem from a USB drive is mounted at ${c.dir}. What should be done before physically disconnecting the drive?`,
+    c => `A student finished copying files to a USB filesystem at ${c.dir}. Which safe step comes before removal?`,
+    c => `Which action lets buffered writes finish before the storage mounted on ${c.dir} is unplugged?`,
+    c => `${c.host} still shows a USB filesystem mounted at ${c.dir}. What must the administrator do before disconnecting it?`,
+    c => `Why should the mount at ${c.dir} be detached through the operating system before removing the device?`
+  ],
+  motherboard: [
+    c => `During a hardware check of ${c.host}, what is identified as the motherboard's primary system role?`,
+    c => `Which component provides the main connections among CPU, memory, storage controllers, and expansion devices?`,
+    c => `A diagram places one board at the center of communication between the major hardware parts of ${c.host}. What is its role?`,
+    c => `Which description separates the motherboard from the power supply and permanent storage?`,
+    c => `What system function is performed by the motherboard rather than by RAM or a disk?`
+  ],
+  "x86-memory": [
+    c => `Why is an x86_64 operating environment on ${c.host} able to support far more memory than a 32-bit x86 environment?`,
+    c => `Which architectural difference primarily raises the addressable-memory limit when moving from 32-bit x86 to x86_64?`,
+    c => `${c.host} is upgraded to a 64-bit operating environment. Why can it map a much larger memory space?`,
+    c => `A student claims x86_64 removes the need for storage. Which actual advantage over 32-bit x86 is correct?`,
+    c => `What property of 64-bit addressing allows ${c.host} to use substantially more RAM than a 32-bit system?`
+  ]
+};
+
 function resolve(value, c) {
   return typeof value === "function" ? value(c) : value;
 }
@@ -299,19 +480,25 @@ function rotateChoices(choices, offset) {
 }
 
 export function buildVariants() {
-  return CASES.map((c, variantIndex) => ({
+  return CASES.map((c, variantIndex) => {
+    const orderedConcepts = CONCEPTS.map((_, position) =>
+      CONCEPTS[(position * 7 + variantIndex * 3) % CONCEPTS.length]
+    );
+    return ({
     id: variantIndex + 1,
     number: variantIndex + 1,
     title: `Variant ${String(variantIndex + 1).padStart(2, "0")}`,
-    questions: CONCEPTS.map((concept, questionIndex) => {
+    questions: orderedConcepts.map((concept, questionIndex) => {
       const answer = resolve(concept.answer, c);
       const choices = rotateChoices(resolve(concept.choices, c), variantIndex + questionIndex);
+      const promptOptions = PROMPT_VARIANTS[concept.id];
+      const rawPrompt = promptOptions[variantIndex % promptOptions.length](c);
       return {
         id: `v${variantIndex + 1}-${concept.id}`,
         conceptId: concept.id,
         topic: concept.topic,
         difficulty: concept.difficulty,
-        question: concept.question(c),
+        question: rawPrompt.includes(c.host) ? rawPrompt : `${rawPrompt} The task is performed on ${c.host}.`,
         choices,
         answer,
         explanation: Object.fromEntries(
@@ -319,7 +506,8 @@ export function buildVariants() {
         )
       };
     })
-  }));
+  });
+  });
 }
 
 export const BOOKS = [

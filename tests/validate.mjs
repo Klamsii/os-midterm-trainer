@@ -12,6 +12,20 @@ assert.ok(variants.every((variant) => variant.questions.length === 25), "Each va
 assert.equal(questions.length, 500, "The bank must contain 500 questions.");
 assert.equal(new Set(questionTexts).size, 500, "Question wording must be unique across all variants.");
 assert.equal(new Set(questionIds).size, 500, "Question IDs must be unique.");
+assert.equal(
+  new Set(variants.map((variant) => variant.questions.map((question) => question.conceptId).join("|"))).size,
+  20,
+  "Every variant must use a different question order."
+);
+
+for (let index = 1; index < variants.length; index += 1) {
+  const previous = variants[index - 1];
+  const current = variants[index];
+  assert.ok(
+    current.questions.every((question, position) => question.conceptId !== previous.questions[position].conceptId),
+    `Variants ${index} and ${index + 1} repeat skills in the same positions.`
+  );
+}
 
 for (const [index, variant] of variants.entries()) {
   assert.equal(variant.number, index + 1, "Variant numbers must be sequential.");

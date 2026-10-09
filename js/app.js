@@ -1,7 +1,7 @@
 import { BOOKS, SOURCES, TOPICS, buildVariants } from "./content.js";
 
 const variants = buildVariants();
-const STORAGE_KEY = "os-midterm-trainer-v1";
+const STORAGE_KEY = "os-midterm-trainer-v2";
 
 const views = {
   dashboard: document.querySelector("#dashboardView"),

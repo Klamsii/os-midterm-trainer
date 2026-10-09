@@ -6,8 +6,8 @@ An adaptive, browser-based study site for the Operating Systems midterm topics u
 
 ## What is included
 
-- 20 independently selectable exam variants
-- 25 English questions per variant and 500 unique question statements
+- 20 independently selectable exam variants with different question orders
+- 25 English questions per variant, 500 unique statements, and five distinct exam formulations for every tested skill
 - explanations in Kazakh, Russian, and English; Kazakh is selected by default
 - saved attempts, topic accuracy, repeated-error detection, and a recommended next step
 - a multilingual study library covering Bash, hardware, devices, disks, and kernel modules
